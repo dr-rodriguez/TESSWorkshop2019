@@ -189,8 +189,6 @@ def add_points(p, data, proj='hammer', maptype='equatorial',
 @app_portal.route('/index')
 @app_portal.route('/index.html')
 def app_home():
-    if db_name:
-        return 'read exomast db'
     return render_template('index.html')
 
 
@@ -248,17 +246,17 @@ def app_tessexomast():
     p1 = make_sky_plot()
     add_patches(p1, obsDF, maptype='equatorial', tooltip=None)
     add_points(p1, df, maptype='equatorial')
-    p2 = make_sky_plot()
-    add_patches(p2, obsDF, maptype='galactic', tooltip=None)
-    add_points(p2, df, maptype='galactic')
-    p3 = make_sky_plot()
-    add_patches(p3, obsDF, maptype='ecliptic', tooltip=None)
-    add_points(p3, df, maptype='ecliptic')
+    # p2 = make_sky_plot()
+    # add_patches(p2, obsDF, maptype='galactic', tooltip=None)
+    # add_points(p2, df, maptype='galactic')
+    # p3 = make_sky_plot()
+    # add_patches(p3, obsDF, maptype='ecliptic', tooltip=None)
+    # add_points(p3, df, maptype='ecliptic')
 
     tab1 = Panel(child=p1, title="Equatorial")
-    tab2 = Panel(child=p2, title="Galatic")
-    tab3 = Panel(child=p3, title="Ecliptic")
-    tabs = Tabs(tabs=[tab1, tab2, tab3])
+    # tab2 = Panel(child=p2, title="Galatic")
+    # tab3 = Panel(child=p3, title="Ecliptic")
+    tabs = Tabs(tabs=[tab1])
 
     script, div = components(tabs)
 
@@ -269,4 +267,7 @@ def app_tessexomast():
 def app_exomast():
 
     # Get nexsci data
-    cursor = planets.find({'catalog_name': 'nexsci'}, {'_id': 0, 'period.value': 1})
+    cursor = planets.find({'catalog_name': 'nexsci'},
+                          {'_id': 0, 'orbital_period.value': 1, 'planet_radius.value': 1})
+    df_nexsci = list(cursor)
+
