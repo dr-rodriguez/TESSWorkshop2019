@@ -244,7 +244,7 @@ def app_tessexomast():
     obsDF['coords'] = obsDF.apply(lambda x: parse_s_region(x['s_region']), axis=1)
 
     p1 = make_sky_plot()
-    # add_patches(p1, obsDF, maptype='equatorial', tooltip=None)
+    add_patches(p1, obsDF, maptype='equatorial', tooltip=None)
     add_points(p1, df, maptype='equatorial')
     # p2 = make_sky_plot()
     # add_patches(p2, obsDF, maptype='galactic', tooltip=None)
@@ -263,22 +263,43 @@ def app_tessexomast():
     return render_template('tessffi.html', script=script, plot=div)
 
 
+def get_mongodb_data(catalog):
+    cursor = planets.find({'catalog_name': catalog},
+                          {'_id': 0, 'planet_name': 1, 'orbital_period.value': 1, 'planet_radius.value': 1})
+    df = pd.DataFrame(list(cursor))
+    df['orbital_period'] = [x['value'] if x is not np.nan else None for x in df['orbital_period']]
+    df['planet_radius'] = [x['value'] if x is not np.nan else None for x in df['planet_radius']]
+    return df
+
 @app_portal.route('/exomast', methods=['GET', 'POST'])
 def app_exomast():
 
-    # Get nexsci data
-    cursor = planets.find({'catalog_name': 'nexsci'},
-                          {'_id': 0, 'orbital_period.value': 1, 'planet_radius.value': 1})
-    df_nexsci = list(cursor)
-    cursor = planets.find({'catalog_name': 'exoplanets.org'},
-                          {'_id': 0, 'orbital_period.value': 1, 'planet_radius.value': 1})
-    df_exoplanets = list(cursor)
-    cursor = planets.find({'catalog_name': 'koi'},
-                          {'_id': 0, 'orbital_period.value': 1, 'planet_radius.value': 1})
-    df_koi = list(cursor)
-    cursor = planets.find({'catalog_name': 'TESS-DV'},
-                          {'_id': 0, 'orbital_period.value': 1, 'planet_radius.value': 1})
-    df_tessdv = list(cursor)
+    tools = "save,pan,wheel_zoom,box_zoom,reset"
+    p = figure(tools=tools, title='', plot_width=800, plot_height=600,
+               x_axis_type="log", y_axis_type="log",
+               x_axis_label='Orbital Period (d)', y_axis_label='Planet Radius (R_Jup)')
 
+    source = ColumnDataSource(data=get_mongodb_data('nexsci'))
+    p.scatter('orbital_period', 'planet_radius', source=source,
+              size=4, alpha=0.2, legend='ExoMast: NExScI',
+              fill_color=color_palette[0])
+    source = ColumnDataSource(data=get_mongodb_data('exoplanets.org'))
+    p.scatter('orbital_period', 'planet_radius', source=source,
+              size=4, alpha=0.2, legend='ExoMast: exoplanets.org',
+              fill_color=color_palette[1])
+    source = ColumnDataSource(data=get_mongodb_data('koi'))
+    p.scatter('orbital_period', 'planet_radius', source=source,
+              size=4, alpha=0.2, legend='ExoMast: KOI',
+              fill_color=color_palette[2])
+    source = ColumnDataSource(data=get_mongodb_data('TESS-DV'))
+    p.scatter('orbital_period', 'planet_radius', source=source,
+              size=4, alpha=0.2, legend='ExoMast: TESS-DV',
+              fill_color=color_palette[3])
 
+    tooltip = [('Planet Name', '@planet_name')]
+    p.add_tools(HoverTool(tooltips=tooltip))
+    p.legend.click_policy = "hide"
 
+    script, div = components(p)
+
+    return render_template('tessffi.html', script=script, plot=div)
