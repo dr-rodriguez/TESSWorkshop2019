@@ -1,10 +1,9 @@
 from flask import Flask, render_template, request, redirect, make_response
 import os
 from bokeh.embed import components
-from bokeh.plotting import figure, output_file, show
+from bokeh.plotting import figure
 from bokeh.models import ColumnDataSource, HoverTool
 from bokeh.models.widgets import Panel, Tabs
-from bokeh.io import output_file, reset_output
 import numpy as np
 import pandas as pd
 from bokeh.palettes import Spectral5 as color_palette
@@ -24,6 +23,8 @@ planets = db.planets  # collection
 
 
 def get_mongodb_data(catalog):
+    global planets
+
     cursor = planets.find({'catalog_name': catalog},
                           {'_id': 0, 'planet_name': 1, 'orbital_period.value': 1, 'planet_radius.value': 1})
     df = pd.DataFrame(list(cursor))
