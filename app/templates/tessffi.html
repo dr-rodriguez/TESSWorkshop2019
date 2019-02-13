@@ -1,0 +1,25 @@
+<!doctype html>
+<title>David's Super-Secret Portal</title>
+
+<link rel="stylesheet" href="https://cdn.pydata.org/bokeh/release/bokeh-0.13.0.min.css" type="text/css" />
+<script type="text/javascript" src="https://cdn.pydata.org/bokeh/release/bokeh-0.13.0.min.js"></script>
+
+<link rel="stylesheet" href="https://cdn.pydata.org/bokeh/release/bokeh-widgets-0.13.0.min.css" type="text/css" />
+<script type="text/javascript" src="https://cdn.pydata.org/bokeh/release/bokeh-widgets-0.13.0.min.js"></script>
+
+{{ script|safe }}
+
+<header id="branding">
+    <h1>David's Super-Secret Portal</h1>
+    <ul>
+        <li><a href="index">Index</a></li>
+        <li><a href="tessffi">TESS FFI Map</a></li>
+        <!--<li><a href="https://github.com/dr-rodriguez/DR-Portal">GitHub</a></li>-->
+    </ul>
+</header>
+
+<div class=page>
+
+    {{ plot|safe }}
+
+</div>
