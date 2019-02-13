@@ -189,8 +189,8 @@ def add_points(p, data, proj='hammer', maptype='equatorial',
 @app_portal.route('/index')
 @app_portal.route('/index.html')
 def app_home():
-    if not db_name:
-        return 'unable to read exomast db'
+    if db_name:
+        return 'read exomast db'
     return render_template('index.html')
 
 
