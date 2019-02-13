@@ -17,8 +17,8 @@ import pymongo
 app_portal = Flask(__name__)
 
 # Connect to pymongo
-db_name = os.getenv('EXOMAST_NAME')
-client = pymongo.MongoClient(os.getenv('EXOMAST_MONGO'))
+db_name = os.environ.get('EXOMAST_NAME')
+client = pymongo.MongoClient(os.environ.get('EXOMAST_MONGO'))
 db = client[db_name]  # database
 planets = db.planets  # collection
 
