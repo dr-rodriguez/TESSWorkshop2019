@@ -204,7 +204,7 @@ def app_home():
 
 @app_portal.route('/tessffi', methods=['GET', 'POST'])
 def app_tessffi():
-    obsTable = Observations.query_criteria(dataproduct_type=["image"], obs_collection='TESS')
+    obsTable = Observations.query_criteria(dataproduct_type=["image"], obs_collection='TESS', timeout=600)
     obsDF = obsTable.to_pandas()
     obsDF['coords'] = obsDF.apply(lambda x: parse_s_region(x['s_region']), axis=1)
 
@@ -253,7 +253,7 @@ def app_tessexomast():
     df['dec'] = pd.to_numeric(df['dec'].apply(lambda x: x[0]))
 
     # Prepare TESS FFI
-    obsTable = Observations.query_criteria(dataproduct_type=["image"], obs_collection='TESS')
+    obsTable = Observations.query_criteria(dataproduct_type=["image"], obs_collection='TESS', timeout=600)
     obsDF = obsTable.to_pandas()
     obsDF['coords'] = obsDF.apply(lambda x: parse_s_region(x['s_region']), axis=1)
 
