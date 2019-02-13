@@ -22,6 +22,8 @@
 
 <div class=page>
 
-    {{ plot|safe }}
+    <!--{{ plot|safe }}-->
+    {% for one_plot in plot %}
+        {{ one_plot|safe }}
 
 </div>
