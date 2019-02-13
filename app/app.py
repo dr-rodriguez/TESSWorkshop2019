@@ -23,6 +23,15 @@ db = client[db_name]  # database
 planets = db.planets  # collection
 
 
+def get_mongodb_data(catalog):
+    cursor = planets.find({'catalog_name': catalog},
+                          {'_id': 0, 'planet_name': 1, 'orbital_period.value': 1, 'planet_radius.value': 1})
+    df = pd.DataFrame(list(cursor))
+    df['orbital_period'] = [x['value'] if x is not np.nan else None for x in df['orbital_period']]
+    df['planet_radius'] = [x['value'] if x is not np.nan else None for x in df['planet_radius']]
+    return df
+
+
 def parse_s_region(s_region):
     ra = []
     dec = []
@@ -183,6 +192,8 @@ def add_points(p, data, proj='hammer', maptype='equatorial',
 
     p.legend.click_policy = "hide"
 
+    return p
+
 
 # Redirect to the main page
 @app_portal.route('/')
@@ -244,14 +255,14 @@ def app_tessexomast():
     obsDF['coords'] = obsDF.apply(lambda x: parse_s_region(x['s_region']), axis=1)
 
     p1 = make_sky_plot()
-    add_patches(p1, obsDF, maptype='equatorial', tooltip=None)
-    add_points(p1, df, maptype='equatorial')
+    p1 = add_patches(p1, obsDF, maptype='equatorial', tooltip=None)
+    p1 = add_points(p1, df, maptype='equatorial')
     p2 = make_sky_plot()
-    add_patches(p2, obsDF, maptype='galactic', tooltip=None)
-    add_points(p2, df, maptype='galactic')
+    p2 = add_patches(p2, obsDF, maptype='galactic', tooltip=None)
+    p2 = add_points(p2, df, maptype='galactic')
     p3 = make_sky_plot()
-    add_patches(p3, obsDF, maptype='ecliptic', tooltip=None)
-    add_points(p3, df, maptype='ecliptic')
+    p3 = add_patches(p3, obsDF, maptype='ecliptic', tooltip=None)
+    p3 = add_points(p3, df, maptype='ecliptic')
 
     tab1 = Panel(child=p1, title="Equatorial")
     tab2 = Panel(child=p2, title="Galatic")
@@ -262,14 +273,6 @@ def app_tessexomast():
 
     return render_template('tessffi.html', script=script, plot=div)
 
-
-def get_mongodb_data(catalog):
-    cursor = planets.find({'catalog_name': catalog},
-                          {'_id': 0, 'planet_name': 1, 'orbital_period.value': 1, 'planet_radius.value': 1})
-    df = pd.DataFrame(list(cursor))
-    df['orbital_period'] = [x['value'] if x is not np.nan else None for x in df['orbital_period']]
-    df['planet_radius'] = [x['value'] if x is not np.nan else None for x in df['planet_radius']]
-    return df
 
 @app_portal.route('/exomast', methods=['GET', 'POST'])
 def app_exomast():
