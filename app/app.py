@@ -15,15 +15,13 @@ import pymongo
 
 app_portal = Flask(__name__)
 
-# Connect to pymongo
-db_name = os.environ.get('EXOMAST_NAME')
-client = pymongo.MongoClient(os.environ.get('EXOMAST_MONGO'))
-db = client[db_name]  # database
-planets = db.planets  # collection
-
 
 def get_mongodb_data(catalog):
-    global planets
+    # Connect to pymongo
+    db_name = os.environ.get('EXOMAST_NAME')
+    client = pymongo.MongoClient(os.environ.get('EXOMAST_MONGO'))
+    db = client[db_name]  # database
+    planets = db.planets  # collection
 
     cursor = planets.find({'catalog_name': catalog},
                           {'_id': 0, 'planet_name': 1, 'orbital_period.value': 1, 'planet_radius.value': 1})
@@ -229,7 +227,11 @@ def app_tessffi():
 
 @app_portal.route('/tessexomast', methods=['GET', 'POST'])
 def app_tessexomast():
-    global planets
+    # Connect to pymongo
+    db_name = os.environ.get('EXOMAST_NAME')
+    client = pymongo.MongoClient(os.environ.get('EXOMAST_MONGO'))
+    db = client[db_name]  # database
+    planets = db.planets  # collection
 
     # Load data
     cursor = planets.aggregate([{'$group': {
