@@ -1,4 +1,5 @@
 from flask import Flask, render_template, request, redirect, make_response
+import os
 from bokeh.embed import components
 from bokeh.plotting import figure, output_file, show
 from bokeh.models import ColumnDataSource, HoverTool
@@ -11,8 +12,15 @@ from astroquery.mast import Observations
 import astropy.units as u
 from astropy.coordinates import SkyCoord
 from bokeh.layouts import column, widgetbox
+import pymongo
 
 app_portal = Flask(__name__)
+
+# Connect to pymongo
+db_name = os.getenv('EXOMAST_NAME')
+client = pymongo.MongoClient(os.getenv('EXOMAST_MONGO'))
+db = client[db_name]  # database
+planets = db.planets  # collection
 
 
 def parse_s_region(s_region):
@@ -110,7 +118,7 @@ def make_sky_plot(proj='hammer'):
     return p
 
 
-def add_patches(p, obsDF, proj='hammer', maptype='equatorial'):
+def add_patches(p, obsDF, proj='hammer', maptype='equatorial', tooltip=[("obs_id", "@obs_id")]):
     for sec, color in zip([1, 2, 3, 4, 5], color_palette):
         ind = obsDF['sequence_number'] == sec
 
@@ -148,10 +156,32 @@ def add_patches(p, obsDF, proj='hammer', maptype='equatorial'):
     p.legend.click_policy = "hide"
 
     # Add hover tooltip for MAST observations
-    tooltip = [("obs_id", "@obs_id"), ("x", "@x"), ("y", "@y")]
-    p.add_tools(HoverTool(tooltips=tooltip))
+    if tooltip:
+        p.add_tools(HoverTool(tooltips=tooltip))
 
     return p
+
+
+def add_points(p, data, proj='hammer', maptype='equatorial',
+               tooltip=[('Planet Name', '@planet_name'),("(RA, Dec)", "(@ra, @dec)"),
+                        ('Catalog', '@catalog_name')]):
+
+    if proj:
+        c = SkyCoord(ra=np.array(data['ra']) * u.degree, dec=np.array(data['dec']) * u.degree)
+        if maptype == 'ecliptic':
+            data['x'], data['y'] = projection(c.geocentrictrueecliptic.lon.radian - np.pi,
+                                        c.geocentrictrueecliptic.lat.radian, use=proj)
+        elif maptype == 'galactic':
+            data['x'], data['y'] = projection(c.galactic.l.radian - np.pi, c.galactic.b.radian, use=proj)
+        else:
+            data['x'], data['y'] = projection(c.ra.radian - np.pi, c.dec.radian, use=proj)
+
+    source = ColumnDataSource(data=data)
+    p.scatter('x', 'y', source=source, size=4, alpha=0.2, legend='ExoMast Sources')
+    if tooltip:
+        p.add_tools(HoverTool(tooltips=tooltip))
+
+    p.legend.click_policy = "hide"
 
 
 # Redirect to the main page
@@ -169,7 +199,6 @@ def app_tessffi():
     obsTable = Observations.query_criteria(dataproduct_type=["image"], obs_collection='TESS')
     obsDF = obsTable.to_pandas()
     obsDF['coords'] = obsDF.apply(lambda x: parse_s_region(x['s_region']), axis=1)
-    obsDF['coords'].head()
 
     p1 = make_sky_plot()
     p1 = add_patches(p1, obsDF, maptype='equatorial')
@@ -187,3 +216,50 @@ def app_tessffi():
 
     return render_template('tessffi.html', script=script, plot=div)
 
+
+@app_portal.route('/tessexomast', methods=['GET', 'POST'])
+def app_tessexomast():
+    global planets
+
+    # Load data
+    cursor = planets.aggregate([{'$group': {
+        '_id': '$exoplanet_id',
+        'planet_name': {'$push': '$planet_name'},
+        'catalog_name': {'$push': '$catalog_name'},
+        'ra': {'$push': '$ra'},
+        'dec': {'$push': '$dec'}
+    }},
+        {'$project': {'_id': 1, 'planet_name': 1, 'catalog_name': 1,
+                      'ra': {'$slice': ['$ra', 0, 1]},
+                      'dec': {'$slice': ['$dec', 0, 1]},
+                      }}])
+    data_all = list(cursor)
+    # for i in range(len(data_all)): print(data_all[i])
+
+    df = pd.DataFrame(data_all)
+    df['ra'] = pd.to_numeric(df['ra'].apply(lambda x: x[0]))
+    df['dec'] = pd.to_numeric(df['dec'].apply(lambda x: x[0]))
+
+    # Prepare TESS FFI
+    obsTable = Observations.query_criteria(dataproduct_type=["image"], obs_collection='TESS')
+    obsDF = obsTable.to_pandas()
+    obsDF['coords'] = obsDF.apply(lambda x: parse_s_region(x['s_region']), axis=1)
+
+    p1 = make_sky_plot()
+    add_patches(p1, obsDF, maptype='equatorial', tooltip=None)
+    add_points(p1, df, maptype='equatorial')
+    p2 = make_sky_plot()
+    add_patches(p2, obsDF, maptype='galactic', tooltip=None)
+    add_points(p2, df, maptype='galactic')
+    p3 = make_sky_plot()
+    add_patches(p3, obsDF, maptype='ecliptic', tooltip=None)
+    add_points(p3, df, maptype='ecliptic')
+
+    tab1 = Panel(child=p1, title="Equatorial")
+    tab2 = Panel(child=p2, title="Galatic")
+    tab3 = Panel(child=p3, title="Ecliptic")
+    tabs = Tabs(tabs=[tab1, tab2, tab3])
+
+    script, div = components(tabs)
+
+    return render_template('tessffi.html', script=script, plot=div)

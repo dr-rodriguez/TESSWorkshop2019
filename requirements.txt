@@ -4,3 +4,4 @@ numpy>=1.14.2
 pandas>=0.21.0
 flask>=0.12.2
 bokeh>=0.13.0
+pymongo>=3.7.2
