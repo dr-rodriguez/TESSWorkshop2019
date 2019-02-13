@@ -189,11 +189,11 @@ def add_points(p, data, proj='hammer', maptype='equatorial',
 @app_portal.route('/index')
 @app_portal.route('/index.html')
 def app_home():
-
+    if not db_name:
+        return 'unable to read exomast db'
     return render_template('index.html')
 
 
-# Page with a text box to take the SQL query
 @app_portal.route('/tessffi', methods=['GET', 'POST'])
 def app_tessffi():
     obsTable = Observations.query_criteria(dataproduct_type=["image"], obs_collection='TESS')
@@ -263,3 +263,10 @@ def app_tessexomast():
     script, div = components(tabs)
 
     return render_template('tessffi.html', script=script, plot=div)
+
+
+@app_portal.route('/exomast', methods=['GET', 'POST'])
+def app_exomast():
+
+    # Get nexsci data
+    cursor = planets.find({'catalog_name': 'nexsci'}, {'_id': 0, 'period.value': 1})
