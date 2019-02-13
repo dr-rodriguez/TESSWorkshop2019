@@ -233,6 +233,8 @@ def app_tessexomast():
     db = client[db_name]  # database
     planets = db.planets  # collection
 
+    return planets.count_documents({})
+
     # Load data
     cursor = planets.aggregate([{'$group': {
         '_id': '$exoplanet_id',
