@@ -244,7 +244,7 @@ def app_tessexomast():
     obsDF['coords'] = obsDF.apply(lambda x: parse_s_region(x['s_region']), axis=1)
 
     p1 = make_sky_plot()
-    add_patches(p1, obsDF, maptype='equatorial', tooltip=None)
+    # add_patches(p1, obsDF, maptype='equatorial', tooltip=None)
     add_points(p1, df, maptype='equatorial')
     # p2 = make_sky_plot()
     # add_patches(p2, obsDF, maptype='galactic', tooltip=None)
@@ -253,12 +253,12 @@ def app_tessexomast():
     # add_patches(p3, obsDF, maptype='ecliptic', tooltip=None)
     # add_points(p3, df, maptype='ecliptic')
 
-    tab1 = Panel(child=p1, title="Equatorial")
+    # tab1 = Panel(child=p1, title="Equatorial")
     # tab2 = Panel(child=p2, title="Galatic")
     # tab3 = Panel(child=p3, title="Ecliptic")
-    tabs = Tabs(tabs=[tab1])
+    # tabs = Tabs(tabs=[tab1])
 
-    script, div = components(tabs)
+    script, div = components(p1)
 
     return render_template('tessffi.html', script=script, plot=div)
 
@@ -270,4 +270,15 @@ def app_exomast():
     cursor = planets.find({'catalog_name': 'nexsci'},
                           {'_id': 0, 'orbital_period.value': 1, 'planet_radius.value': 1})
     df_nexsci = list(cursor)
+    cursor = planets.find({'catalog_name': 'exoplanets.org'},
+                          {'_id': 0, 'orbital_period.value': 1, 'planet_radius.value': 1})
+    df_exoplanets = list(cursor)
+    cursor = planets.find({'catalog_name': 'koi'},
+                          {'_id': 0, 'orbital_period.value': 1, 'planet_radius.value': 1})
+    df_koi = list(cursor)
+    cursor = planets.find({'catalog_name': 'TESS-DV'},
+                          {'_id': 0, 'orbital_period.value': 1, 'planet_radius.value': 1})
+    df_tessdv = list(cursor)
+
+
 
